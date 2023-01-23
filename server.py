@@ -49,30 +49,28 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         # ignore all other http methods other than GET and send 405
         if (self.httpMethod != 'GET'):
-            response = self._createResponse()
+            self.statusCode = '405 Method Not Allowed'
 
         else:
             # if index route / just spit out index.html page otherwise use folder structure to get other pages
             fileRoute = "www/index.html" if self.route[-1] == '/' else 'www' + self.route
 
-            # location header
-            self.locationHeader = 'Location: ' + self.route + '/' + '\n'
-
             try:
                 # check it valid file or folder and send correct status code
-                pathToFile = os.getcwd() + "/" + fileRoute
-                if (os.path.isfile(pathToFile) or os.path.isdir(pathToFile)):
+                pathToFile = os.getcwd() + "/www/" + os.path.abspath(self.route)
+                if (not os.path.isdir(pathToFile) and not os.path.isfile(pathToFile)):
+                    self.statusCode = "404 Page Not Found"
+                else:
                     self.statusCode = "200 OK"
                     self.fileContent = open(fileRoute, 'r').read()
-                else:
-                    self.statusCode = "404 Page Not Found"
 
                 # grab the mime type
                 self.mimeType = self._defineMimeType(fileRoute)
 
             except:
-                if self.route[-1] == '/':
+                if self.route[-1] != '/':
                     self.statusCode = '301 Moved Permanently'
+                    self.locationHeader = 'Location: ' + self.route + '/' + '\n'
                 else:
                     self.statusCode = '404 Page Not Found'
 
