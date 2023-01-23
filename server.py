@@ -31,8 +31,27 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
     def handle(self):
         self.data = self.request.recv(1024).strip().decode('utf-8')
-        print("Got a request of: %s\n" % self.data.splitlines()[0].split())
-        self.request.sendall(bytearray("OK", 'utf-8'))
+
+        # get the stuff from the request
+        httpMethod, route, protocol = self.data.splitlines()[0].split()
+
+        print("Got a request of: %s\n" % self.data)
+
+        # ignore all other http methods other than GET and send 405
+        if (httpMethod != 'GET'):
+            response = self._createResponse(
+                protocol, '405 Method Not Allowed', '', 'text/plain', '405 Method Not Allowed')
+
+        else:
+            # if index route / just spit out index.html page otherwise use folder structure to get other pages
+            fileRoute = "/index.html" if route[-1] == '/' else 'www' + route
+            print(fileRoute)
+
+        self.request.sendall(bytearray(response, 'utf-8'))
+
+    def _createResponse(self, protocol, statusCode, route, mimeType, content):
+        return protocol + ' ' + statusCode + '\n' + \
+            route + mimeType + '\n\n' + content + '\n'
 
 
 if __name__ == "__main__":
