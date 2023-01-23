@@ -45,7 +45,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.httpMethod, self.route, self.protocol = self.data.splitlines()[
             0].split()
 
-        # print("Got a request of: %s\n" % self.data)
+        print("Got a request of: %s\n" % self.data)
 
         # ignore all other http methods other than GET and send 405
         if (self.httpMethod != 'GET'):
@@ -53,7 +53,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         else:
             # if index route / just spit out index.html page otherwise use folder structure to get other pages
-            fileRoute = "www/index.html" if self.route[-1] == '/' else 'www' + self.route
+            fileRoute = 'www' + self.route + \
+                'index.html' if self.route[-1] == '/' else 'www' + self.route
 
             try:
                 # check it valid file or folder and send correct status code
