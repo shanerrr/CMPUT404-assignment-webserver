@@ -58,7 +58,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
             try:
                 # check it valid file or folder and send correct status code
-                pathToFile = os.getcwd() + "/www/" + os.path.abspath(self.route)
+                pathToFile = os.getcwd() + "/www" + os.path.abspath(self.route)
+                print(pathToFile)
                 if (not os.path.isdir(pathToFile) and not os.path.isfile(pathToFile)):
                     self.statusCode = "404 Page Not Found"
                 else:
