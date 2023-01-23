@@ -1,5 +1,6 @@
 #  coding: utf-8
 import socketserver
+import os
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 #
@@ -44,8 +45,22 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         else:
             # if index route / just spit out index.html page otherwise use folder structure to get other pages
-            fileRoute = "/index.html" if route[-1] == '/' else 'www' + route
-            print(fileRoute)
+            fileRoute = "www/index.html" if route[-1] == '/' else 'www' + route
+            file = open(fileRoute, 'r').read()
+
+            # check it valid file or folder and send correct status code
+            pathToFile = os.getcwd()+"/"+fileRoute
+            if (os.path.isfile(pathToFile) or os.path.isdir(pathToFile)):
+                statusCode = "200 OK"
+            else:
+                statusCode = "404 Page Not Found"
+
+            # assuming only two mime types
+            mimeType = "Content-Type: text/html" if fileRoute.endswith(
+                '.html') else 'Content-Type: text/css'
+
+            response = self._createResponse(
+                protocol, statusCode, "", mimeType, file)
 
         self.request.sendall(bytearray(response, 'utf-8'))
 
