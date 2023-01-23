@@ -30,45 +30,54 @@ import os
 
 class MyWebServer(socketserver.BaseRequestHandler):
 
+    httpMethod = ''
+    route = ''
+    protocol = ''
+    fileContent = ''
+    statusCode = ''
+    mimeType = ''
+    locationHeader = ''
+
     def handle(self):
         self.data = self.request.recv(1024).strip().decode('utf-8')
 
         # get the stuff from the request
-        httpMethod, route, protocol = self.data.splitlines()[0].split()
+        self.httpMethod, self.route, self.protocol = self.data.splitlines()[
+            0].split()
 
         # print("Got a request of: %s\n" % self.data)
 
         # ignore all other http methods other than GET and send 405
-        if (httpMethod != 'GET'):
-            response = self._createResponse(
-                protocol, '405 Method Not Allowed', '', 'text/plain', '405 Method Not Allowed')
+        if (self.httpMethod != 'GET'):
+            response = self._createResponse()
 
         else:
             # if index route / just spit out index.html page otherwise use folder structure to get other pages
-            fileRoute = "www/index.html" if route[-1] == '/' else 'www' + route
+            fileRoute = "www/index.html" if self.route[-1] == '/' else 'www' + self.route
 
             # location header
-            location = 'Location: ' + route + '/' + '\n'
+            self.locationHeader = 'Location: ' + self.route + '/' + '\n'
 
             try:
                 # check it valid file or folder and send correct status code
                 pathToFile = os.getcwd() + "/" + fileRoute
                 if (os.path.isfile(pathToFile) or os.path.isdir(pathToFile)):
-                    statusCode = "200 OK"
-                    file = open(fileRoute, 'r').read()
+                    self.statusCode = "200 OK"
+                    self.fileContent = open(fileRoute, 'r').read()
                 else:
-                    statusCode = "404 Page Not Found"
-                    file = ''
+                    self.statusCode = "404 Page Not Found"
 
                 # grab the mime type
-                mimeType = self._defineMimeType(fileRoute)
+                self.mimeType = self._defineMimeType(fileRoute)
 
             except:
-                statusCode = '301 Moved Permanently' if route[-1] == '/' else '404 Page Not Found'
+                if self.route[-1] == '/':
+                    self.statusCode = '301 Moved Permanently'
+                else:
+                    self.statusCode = '404 Page Not Found'
 
         # create response
-        response = self._createResponse(
-            protocol, statusCode, location, mimeType, file)
+        response = self._createResponse()
 
         # send the response
         self.request.sendall(bytearray(response, 'utf-8'))
@@ -76,13 +85,16 @@ class MyWebServer(socketserver.BaseRequestHandler):
     # helper function to define mimeType
     # assuming only two types being sent (.html, and .css)
     def _defineMimeType(self, fileRoute):
-        return 'Content-Type: text/html' if fileRoute.endswith(
-            '.html') else 'Content-Type: text/css'
+        if fileRoute.endswith('.html'):
+            return 'Content-Type: text/html'
+        elif fileRoute.endswith('.css'):
+            return 'Content-Type: text/css'
+        return ''
 
     # helper function to build response
-    def _createResponse(self, protocol, statusCode, locationHeader, mimeType, content):
-        return protocol + ' ' + statusCode + '\n' + \
-            locationHeader + mimeType + '\n\n' + content + '\n'
+    def _createResponse(self):
+        return self.protocol + ' ' + self.statusCode + '\n' + \
+            self.locationHeader + self.mimeType + '\n\n' + self.fileContent + '\n'
 
 
 if __name__ == "__main__":
